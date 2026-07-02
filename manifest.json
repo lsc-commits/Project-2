@@ -1,6 +1,6 @@
 {
-  "name": "2026 마케팅 이벤트 캘린더",
-  "short_name": "마케팅 캘린더",
+  "name": "2026 나만의 달력",
+  "short_name": "나만의 달력",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
