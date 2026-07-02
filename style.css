@@ -744,6 +744,20 @@ body {
   background: color-mix(in srgb, var(--dot-color, var(--accent)) 14%, white);
 }
 
+.platform-tag-all {
+  color: #fff;
+  background: linear-gradient(135deg, #3a4459, #191f28);
+  padding: 3px 10px;
+  box-shadow: 0 2px 6px rgba(25, 31, 40, 0.35);
+}
+
+.platform-stars {
+  font-size: 12px;
+  color: #f5a623;
+  letter-spacing: 1px;
+  margin-left: auto;
+}
+
 .event-title {
   font-size: 15px;
   font-weight: 700;

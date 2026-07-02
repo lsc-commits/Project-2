@@ -26,101 +26,58 @@ const PLATFORM_COLORS = {
 };
 
 // 월별 오픈마켓/플랫폼 주요 세일·기획전 일정 (특정 날짜가 아닌 월 단위 참고 정보, 캘린더에는 표시하지 않음)
+// stars: 반복성(매년 반복되는 정도) 1~5
 const PLATFORM_EVENTS = {
   1: [
-    { platform: "네이버", desc: "신년 특가, 설 선물대전 시작" },
-    { platform: "쿠팡", desc: "신년 BIG SALE" },
-    { platform: "G마켓·옥션", desc: "신년 세일" },
-    { platform: "SSG닷컴", desc: "새해 특가" },
-    { platform: "롯데온", desc: "New Year Sale" },
-    { platform: "11번가", desc: "월간 십일절(1/11)" },
+    { platform: "네이버", name: "설 선물대전", period: "1/10 ~ 설 전날", stars: 5 },
+    { platform: "쿠팡", name: "설 BIG SALE", period: "1/10 ~ 설 전날", stars: 5 },
+    { platform: "G마켓·옥션", name: "설 빅세일", period: "1/20 ~ 설 전날", stars: 5 },
+    { platform: "SSG닷컴", name: "설 선물세트 사전예약", period: "1/2 ~ 설 전날", stars: 5 },
+    { platform: "롯데온", name: "설 선물대전", period: "1/8 ~ 설 전날", stars: 5 },
   ],
   2: [
-    { platform: "전 플랫폼", desc: "설 선물대전" },
-    { platform: "네이버", desc: "설 쇼핑라이브 특집" },
-    { platform: "쿠팡", desc: "설 BIG SALE" },
-    { platform: "SSG", desc: "설 장보기" },
-    { platform: "컬리", desc: "설 선물관" },
-    { platform: "11번가", desc: "월간 십일절" },
+    { platform: "11번가", name: "졸업·입학 페스티벌", period: "2/1 ~ 2/28", stars: 4 },
+    { platform: "네이버", name: "신학기 기획전", period: "2/10 ~ 3/5", stars: 4 },
   ],
   3: [
-    { platform: "네이버", desc: "신학기 프로모션" },
-    { platform: "쿠팡", desc: "신학기 기획전" },
-    { platform: "G마켓", desc: "새학기 세일" },
-    { platform: "컬리", desc: "봄 식품전" },
-    { platform: "11번가", desc: "월간 십일절" },
+    { platform: "SSG닷컴", name: "랜더스 쇼핑페스타", period: "3월 마지막 주 ~ 4월 첫째 주", stars: 5 },
+    { platform: "네이버", name: "브랜드위크", period: "3월 중순(약 1주)", stars: 4 },
   ],
-  4: [
-    { platform: "네이버", desc: "봄 쇼핑페스타" },
-    { platform: "쿠팡", desc: "봄 리빙·패션전" },
-    { platform: "SSG", desc: "Spring Festa" },
-    { platform: "롯데온", desc: "봄 할인전" },
-    { platform: "11번가", desc: "월간 십일절" },
-  ],
+  4: [{ platform: "쿠팡", name: "봄 리빙페어", period: "4/10 ~ 4/25", stars: 3 }],
   5: [
-    { platform: "네이버", desc: "쇼핑페스타(최대 행사)" },
-    { platform: "G마켓·옥션", desc: "빅스마일데이(Big Smile Day)" },
-    { platform: "쿠팡", desc: "Family Month BIG SALE" },
-    { platform: "SSG", desc: "랜더스 쇼핑페스타" },
-    { platform: "롯데온", desc: "가정의 달 선물대전" },
-    { platform: "컬리", desc: "가정의 달 특가" },
-    { platform: "11번가", desc: "월간 십일절" },
+    { platform: "G마켓·옥션", name: "빅스마일데이", period: "5월 둘째 주 ~ 약 7~10일", stars: 5 },
+    { platform: "쿠팡", name: "가정의달 BIG SALE", period: "5/1 ~ 5/15", stars: 4 },
+    { platform: "네이버", name: "가정의달 쇼핑페스타", period: "5/1 ~ 5/15", stars: 4 },
   ],
   6: [
-    { platform: "쿠팡", desc: "WOW SALE" },
-    { platform: "네이버", desc: "여름 준비 기획전" },
-    { platform: "SSG", desc: "Summer Sale" },
-    { platform: "롯데온", desc: "여름 가전 행사" },
-    { platform: "컬리", desc: "여름 식품전" },
-    { platform: "11번가", desc: "월간 십일절" },
+    { platform: "쿠팡", name: "와우 BIG SALE", period: "6월 둘째~셋째 주(약 1주)", stars: 4 },
+    { platform: "11번가", name: "썸머 블랙프라이데이", period: "6월 중순", stars: 3 },
   ],
-  7: [
-    { platform: "네이버", desc: "여름 바캉스 특가" },
-    { platform: "쿠팡", desc: "여름 BIG SALE" },
-    { platform: "G마켓", desc: "바캉스 할인" },
-    { platform: "SSG", desc: "Summer Festa" },
-    { platform: "11번가", desc: "월간 십일절" },
-  ],
-  8: [
-    { platform: "네이버", desc: "Back to School" },
-    { platform: "쿠팡", desc: "개학 준비전" },
-    { platform: "G마켓", desc: "신학기 할인" },
-    { platform: "컬리", desc: "추석 사전예약 시작" },
-    { platform: "11번가", desc: "월간 십일절" },
-  ],
+  7: [{ platform: "전 플랫폼", name: "썸머세일 / 바캉스 특가", period: "7/1 ~ 7/31", stars: 5 }],
+  8: [{ platform: "전 플랫폼", name: "광복절 특가", period: "8/8 ~ 8/18", stars: 4 }],
   9: [
-    { platform: "전 플랫폼", desc: "추석 선물대전" },
-    { platform: "네이버", desc: "추석 쇼핑라이브" },
-    { platform: "쿠팡", desc: "추석 BIG SALE" },
-    { platform: "SSG", desc: "추석 장보기" },
-    { platform: "롯데온", desc: "추석 선물전" },
-    { platform: "컬리", desc: "추석 예약관" },
-    { platform: "11번가", desc: "월간 십일절" },
+    { platform: "네이버", name: "추석 선물대전", period: "추석 3주 전 ~ 전날", stars: 5 },
+    { platform: "쿠팡", name: "추석 BIG SALE", period: "추석 3주 전 ~ 전날", stars: 5 },
+    { platform: "G마켓·옥션", name: "추석 빅세일", period: "추석 2~3주 전 ~ 전날", stars: 5 },
+    { platform: "SSG닷컴", name: "추석 선물세트전", period: "추석 3주 전 ~ 전날", stars: 5 },
+    { platform: "롯데온", name: "추석 선물대전", period: "추석 3주 전 ~ 전날", stars: 5 },
   ],
   10: [
-    { platform: "네이버", desc: "쇼핑페스타(가을)" },
-    { platform: "쿠팡", desc: "가을 쇼핑위크" },
-    { platform: "SSG", desc: "Fall Festa" },
-    { platform: "롯데온", desc: "가을 할인전" },
-    { platform: "11번가", desc: "월간 십일절" },
+    { platform: "네이버", name: "쇼핑페스타", period: "10월 초 ~ 중순", stars: 4 },
+    { platform: "쿠팡", name: "가을 BIG SALE", period: "10월 중순", stars: 3 },
   ],
   11: [
-    { platform: "11번가", desc: "그랜드 십일절(연중 최대 행사)" },
-    { platform: "G마켓·옥션", desc: "빅스마일데이" },
-    { platform: "SSG", desc: "쓱데이(연중 최대 행사)" },
-    { platform: "네이버", desc: "블랙프라이데이 특집" },
-    { platform: "쿠팡", desc: "블랙프라이데이" },
-    { platform: "롯데온", desc: "블랙 메가위크" },
-    { platform: "컬리", desc: "블랙위크" },
+    { platform: "11번가", name: "그랜드 십일절", period: "11/1 ~ 11/11", stars: 5 },
+    { platform: "11번가", name: "월간 십일절", period: "매월 11일", stars: 5 },
+    { platform: "G마켓·옥션", name: "빅스마일데이(하반기)", period: "11월 첫째 주 ~ 약 7~10일", stars: 5 },
+    { platform: "SSG닷컴", name: "쓱데이(대한민국 쓱데이)", period: "11월 첫째 주 전후(약 3~7일)", stars: 5 },
+    { platform: "쿠팡", name: "블랙프라이데이", period: "11월 넷째 주 전후", stars: 5 },
+    { platform: "네이버", name: "쇼핑 블랙위크", period: "11월 중순 ~ 말", stars: 4 },
+    { platform: "롯데온", name: "온세상 쇼핑페스타", period: "11월 초 ~ 중순", stars: 4 },
   ],
   12: [
-    { platform: "네이버", desc: "연말결산 세일" },
-    { platform: "쿠팡", desc: "연말 BIG SALE" },
-    { platform: "G마켓", desc: "연말 감사제" },
-    { platform: "SSG", desc: "연말결산" },
-    { platform: "롯데온", desc: "연말 클리어런스" },
-    { platform: "컬리", desc: "크리스마스·연말 기획전" },
-    { platform: "11번가", desc: "월간 십일절" },
+    { platform: "전 플랫폼", name: "크리스마스 기획전", period: "12/1 ~ 12/25", stars: 5 },
+    { platform: "전 플랫폼", name: "연말결산 SALE", period: "12/26 ~ 12/31", stars: 5 },
   ],
 };
 
@@ -996,12 +953,18 @@ function renderPlatformList() {
     li.className = "event-item";
     li.style.setProperty("--dot-color", PLATFORM_COLORS[item.platform] || "#6B7280");
 
+    const isAllChannels = item.platform === "전 플랫폼";
+    const tagClass = isAllChannels ? "event-tag platform-tag-all" : "event-tag";
+    const stars = "★".repeat(item.stars) + "☆".repeat(5 - item.stars);
+
     li.innerHTML = `
       <div class="event-item-body">
         <div class="event-top-row">
-          <span class="event-tag">${item.platform}</span>
+          <span class="${tagClass}">${item.platform}</span>
+          <span class="platform-stars" title="반복성 ${item.stars}/5">${stars}</span>
         </div>
-        <p class="event-desc">${item.desc}</p>
+        <div class="event-title">${item.name}</div>
+        <p class="event-desc">${item.period}</p>
       </div>
     `;
 
