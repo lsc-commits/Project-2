@@ -2,6 +2,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 :root {
   --bg: #f2f4f6;
   --card: #ffffff;
@@ -47,7 +51,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--accent);
-  background: var(--accent-weak);
+  background: linear-gradient(135deg, var(--accent-weak), #dceaff);
   padding: 5px 12px;
   border-radius: 999px;
   margin-bottom: 12px;
@@ -65,6 +69,18 @@ body {
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
+}
+
+.calendar-card,
+.event-panel,
+.date-action-panel {
+  transition: box-shadow 0.2s ease;
+}
+
+.calendar-card:hover,
+.event-panel:hover,
+.date-action-panel:hover {
+  box-shadow: 0 8px 28px rgba(15, 22, 34, 0.09);
 }
 
 .calendar-card {
@@ -146,7 +162,7 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   background: transparent;
@@ -212,9 +228,10 @@ body {
 }
 
 .day-cell.selected {
-  background: var(--accent);
+  background: linear-gradient(135deg, #5b9bff, var(--accent));
   color: white;
   font-weight: 800;
+  box-shadow: 0 4px 12px rgba(49, 130, 246, 0.35);
 }
 
 .day-cell.selected.has-memo .day-number {
@@ -345,18 +362,24 @@ body {
 
 .btn-primary {
   border: none;
-  background: var(--memo-color);
+  background: linear-gradient(135deg, #9b7bff, var(--memo-color));
   color: white;
   font-weight: 700;
   font-size: 13px;
   padding: 9px 18px;
   border-radius: 999px;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  box-shadow: 0 4px 12px rgba(124, 92, 252, 0.35);
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  box-shadow: 0 6px 16px rgba(124, 92, 252, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
 }
 
 .legend {
@@ -372,7 +395,7 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
 }
@@ -423,8 +446,9 @@ body {
 }
 
 .memo-tab.active {
-  background: var(--memo-color);
+  background: linear-gradient(135deg, #9b7bff, var(--memo-color));
   color: white;
+  box-shadow: 0 3px 10px rgba(124, 92, 252, 0.32);
 }
 
 .memo-tab-name {
@@ -459,7 +483,12 @@ body {
   opacity: 1;
 }
 
-.memo-tab-add {
+.memo-tab-edit-icon {
+  transform: scaleX(-1);
+}
+
+.memo-tab-add,
+.memo-tab-trash {
   flex-shrink: 0;
   width: 26px;
   height: 26px;
@@ -467,15 +496,55 @@ body {
   border: none;
   background: var(--bg);
   color: var(--text-secondary);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
-.memo-tab-add:hover {
+.memo-tab-add {
+  font-size: 15px;
+}
+
+.memo-tab-add:hover,
+.memo-tab-trash:hover {
   background: var(--memo-weak);
   color: var(--memo-color);
+}
+
+.memo-tab-add:active,
+.memo-tab-trash:active {
+  transform: scale(0.92);
+}
+
+.memo-tab-trash.active {
+  background: var(--memo-weak);
+  color: var(--memo-color);
+}
+
+.memo-tab-deleted {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-tertiary);
+  opacity: 0.5;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.memo-tab-deleted:active {
+  cursor: grabbing;
+}
+
+.memo-tab-trash-empty {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  padding: 0 4px;
 }
 
 .memo-tab-picker {
@@ -559,13 +628,13 @@ body {
 }
 
 .event-date {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   font-weight: 700;
 }
 
 .event-tag {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
@@ -574,17 +643,17 @@ body {
 }
 
 .event-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   margin: 0 0 3px;
   letter-spacing: -0.01em;
 }
 
 .event-desc {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .swipe-viewport {
@@ -637,13 +706,13 @@ body {
 }
 
 .swipe-dot.active {
-  background: var(--accent);
+  background: linear-gradient(135deg, #5b9bff, var(--accent));
   width: 16px;
 }
 
 .event-empty {
   color: var(--text-tertiary);
-  font-size: 13px;
+  font-size: 14px;
   text-align: center;
   padding: 20px 0;
   font-weight: 500;

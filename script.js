@@ -219,9 +219,12 @@ let selectedDateKey = null;
 let rangeStart = null;
 let rangeEnd = null;
 
-let memoTabs = loadMemoTabs();
+let memoTabs = [];
+let deletedTabs = [];
+loadMemoState();
 let activeTabIndex = 0;
 let targetTabIndex = 0;
+let trashTrayOpen = false;
 
 const monthLabel = document.getElementById("monthLabel");
 const calendarGrid = document.getElementById("calendarGrid");
@@ -310,47 +313,96 @@ memoSaveBtn.addEventListener("click", () => {
   } else if (mode === "range-edit" && text) {
     tab.ranges.push({ id: String(Date.now()), start: rangeStart, end: rangeEnd, text });
   }
-  saveMemoTabs();
+  saveMemoState();
   resetSelection();
   render();
 });
 
-function loadMemoTabs() {
+function loadMemoState() {
   try {
     const raw = localStorage.getItem(MEMO_TABS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed.tabs) && parsed.tabs.length > 0) return parsed.tabs;
+      if (Array.isArray(parsed.tabs) && parsed.tabs.length > 0) {
+        memoTabs = parsed.tabs;
+        deletedTabs = Array.isArray(parsed.deletedTabs) ? parsed.deletedTabs : [];
+        return;
+      }
     }
     const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
     if (legacyRaw) {
       const legacy = JSON.parse(legacyRaw);
-      return [{ id: "tab-1", name: "내 메모", single: legacy.single || {}, ranges: legacy.ranges || [] }];
+      memoTabs = [{ id: "tab-1", name: "내 메모", single: legacy.single || {}, ranges: legacy.ranges || [] }];
+      deletedTabs = [];
+      return;
     }
   } catch {
     // ignore parse errors, fall through to default
   }
-  return [{ id: "tab-1", name: "내 메모", single: {}, ranges: [] }];
+  memoTabs = [{ id: "tab-1", name: "내 메모", single: {}, ranges: [] }];
+  deletedTabs = [];
 }
 
-function saveMemoTabs() {
-  localStorage.setItem(MEMO_TABS_STORAGE_KEY, JSON.stringify({ tabs: memoTabs }));
+function saveMemoState() {
+  localStorage.setItem(MEMO_TABS_STORAGE_KEY, JSON.stringify({ tabs: memoTabs, deletedTabs }));
 }
 
 function addMemoTab() {
   memoTabs.push({ id: "tab-" + Date.now(), name: `새 메모 ${memoTabs.length + 1}`, single: {}, ranges: [] });
   activeTabIndex = memoTabs.length - 1;
-  saveMemoTabs();
+  saveMemoState();
   render();
 }
 
-function deleteMemoTab(index) {
+function softDeleteTab(index) {
   if (memoTabs.length <= 1) return;
-  memoTabs.splice(index, 1);
+  const [removed] = memoTabs.splice(index, 1);
+  deletedTabs.push(removed);
   if (activeTabIndex > index) activeTabIndex -= 1;
   else if (activeTabIndex >= memoTabs.length) activeTabIndex = memoTabs.length - 1;
-  saveMemoTabs();
+  saveMemoState();
   render();
+}
+
+function restoreTab(deletedIndex) {
+  const [restored] = deletedTabs.splice(deletedIndex, 1);
+  memoTabs.push(restored);
+  activeTabIndex = memoTabs.length - 1;
+  saveMemoState();
+  render();
+}
+
+function startTrashDrag(index, chipEl, startX) {
+  const onMove = (clientX) => {
+    let dx = clientX - startX;
+    if (dx > 0) dx = 0;
+    chipEl.style.transform = `translateX(${dx}px)`;
+    chipEl.dataset.dx = String(dx);
+  };
+  const onEnd = () => {
+    document.removeEventListener("mousemove", mouseMoveHandler);
+    document.removeEventListener("mouseup", mouseUpHandler);
+    document.removeEventListener("touchmove", touchMoveHandler);
+    document.removeEventListener("touchend", touchUpHandler);
+
+    const dx = Number(chipEl.dataset.dx || 0);
+    if (dx < -40) {
+      restoreTab(index);
+    } else {
+      chipEl.style.transition = "transform 0.2s ease";
+      chipEl.style.transform = "translateX(0)";
+    }
+  };
+
+  const mouseMoveHandler = (e) => onMove(e.clientX);
+  const mouseUpHandler = () => onEnd();
+  const touchMoveHandler = (e) => onMove(e.touches[0].clientX);
+  const touchUpHandler = () => onEnd();
+
+  document.addEventListener("mousemove", mouseMoveHandler);
+  document.addEventListener("mouseup", mouseUpHandler);
+  document.addEventListener("touchmove", touchMoveHandler);
+  document.addEventListener("touchend", touchUpHandler);
 }
 
 function startRenameTab(index, chip, nameSpan) {
@@ -364,7 +416,7 @@ function startRenameTab(index, chip, nameSpan) {
   const commit = () => {
     const newName = input.value.trim();
     if (newName) memoTabs[index].name = newName;
-    saveMemoTabs();
+    saveMemoState();
     render();
   };
   input.addEventListener("keydown", (e) => {
@@ -586,8 +638,9 @@ function renderMemoTabBar() {
   memoTabBar.innerHTML = "";
 
   memoTabs.forEach((tab, index) => {
+    const isActive = index === activeTabIndex;
     const chip = document.createElement("div");
-    chip.className = "memo-tab" + (index === activeTabIndex ? " active" : "");
+    chip.className = "memo-tab" + (isActive ? " active" : "");
 
     const nameSpan = document.createElement("span");
     nameSpan.className = "memo-tab-name";
@@ -599,30 +652,30 @@ function renderMemoTabBar() {
     });
     chip.appendChild(nameSpan);
 
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "memo-tab-icon-btn";
-    editBtn.textContent = "✎";
-    editBtn.setAttribute("aria-label", "탭 이름 변경");
-    editBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      startRenameTab(index, chip, nameSpan);
-    });
-    chip.appendChild(editBtn);
-
-    if (memoTabs.length > 1) {
-      const delBtn = document.createElement("button");
-      delBtn.type = "button";
-      delBtn.className = "memo-tab-icon-btn";
-      delBtn.textContent = "×";
-      delBtn.setAttribute("aria-label", "탭 삭제");
-      delBtn.addEventListener("click", (e) => {
+    if (isActive) {
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "memo-tab-icon-btn memo-tab-edit-icon";
+      editBtn.textContent = "✎";
+      editBtn.setAttribute("aria-label", "탭 이름 변경");
+      editBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        if (confirm(`"${tab.name}" 탭을 삭제할까요? 안에 있는 메모도 함께 삭제됩니다.`)) {
-          deleteMemoTab(index);
-        }
+        startRenameTab(index, chip, nameSpan);
       });
-      chip.appendChild(delBtn);
+      chip.appendChild(editBtn);
+
+      if (memoTabs.length > 1) {
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "memo-tab-icon-btn";
+        delBtn.textContent = "×";
+        delBtn.setAttribute("aria-label", "탭 삭제");
+        delBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          softDeleteTab(index);
+        });
+        chip.appendChild(delBtn);
+      }
     }
 
     memoTabBar.appendChild(chip);
@@ -635,6 +688,36 @@ function renderMemoTabBar() {
   addBtn.setAttribute("aria-label", "탭 추가");
   addBtn.addEventListener("click", addMemoTab);
   memoTabBar.appendChild(addBtn);
+
+  const trashBtn = document.createElement("button");
+  trashBtn.type = "button";
+  trashBtn.className = "memo-tab-trash" + (trashTrayOpen ? " active" : "");
+  trashBtn.textContent = "🗑";
+  trashBtn.setAttribute("aria-label", "삭제한 탭 보기");
+  trashBtn.addEventListener("click", () => {
+    trashTrayOpen = !trashTrayOpen;
+    renderMemoTabBar();
+  });
+  memoTabBar.appendChild(trashBtn);
+
+  if (trashTrayOpen) {
+    if (deletedTabs.length === 0) {
+      const empty = document.createElement("span");
+      empty.className = "memo-tab-trash-empty";
+      empty.textContent = "삭제된 탭 없음";
+      memoTabBar.appendChild(empty);
+    } else {
+      deletedTabs.forEach((tab, index) => {
+        const chip = document.createElement("div");
+        chip.className = "memo-tab memo-tab-deleted";
+        chip.textContent = tab.name;
+        chip.title = "왼쪽으로 끌어서 복구";
+        chip.addEventListener("mousedown", (e) => startTrashDrag(index, chip, e.clientX));
+        chip.addEventListener("touchstart", (e) => startTrashDrag(index, chip, e.touches[0].clientX));
+        memoTabBar.appendChild(chip);
+      });
+    }
+  }
 }
 
 function renderMemoTabPicker() {
@@ -708,7 +791,7 @@ function renderMyMemos() {
     li.querySelector(".memo-delete").addEventListener("click", () => {
       if (item.type === "single") delete tab.single[item.date];
       else tab.ranges = tab.ranges.filter((r) => r.id !== item.id);
-      saveMemoTabs();
+      saveMemoState();
       render();
     });
 
