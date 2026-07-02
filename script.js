@@ -692,10 +692,11 @@ function renderCalendar() {
         if (seg.roundRight) bar.classList.add("round-right");
         const leftPct = (seg.startCol / 7) * 100;
         const widthPct = ((seg.endCol - seg.startCol + 1) / 7) * 100;
-        bar.style.left = `calc(${leftPct}% + 2px)`;
-        bar.style.width = `calc(${widthPct}% - 4px)`;
-        bar.style.bottom = `${seg.lane * 9}px`;
-        bar.style.background = CATEGORY_COLORS[seg.category] || "#3182F6";
+        bar.style.left = `calc(${leftPct}% + 3px)`;
+        bar.style.width = `calc(${widthPct}% - 6px)`;
+        bar.style.bottom = `${seg.lane * 7}px`;
+        const barColor = CATEGORY_COLORS[seg.category] || "#3182F6";
+        bar.style.background = `color-mix(in srgb, ${barColor} 65%, white)`;
         bar.title = seg.title;
         barsWrap.appendChild(bar);
       });

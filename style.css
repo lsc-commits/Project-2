@@ -182,25 +182,36 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 13px;
+  bottom: 12px;
   pointer-events: none;
 }
 
 .event-bar {
   position: absolute;
-  height: 5px;
+  height: 2.5px;
+  border-radius: 1.5px;
   pointer-events: auto;
   cursor: default;
 }
 
-.event-bar.round-left {
-  border-top-left-radius: 3px;
-  border-bottom-left-radius: 3px;
+.event-bar.round-left::before,
+.event-bar.round-right::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: inherit;
+  transform: translateY(-50%);
 }
 
-.event-bar.round-right {
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
+.event-bar.round-left::before {
+  left: -1px;
+}
+
+.event-bar.round-right::after {
+  right: -1px;
 }
 
 .day-cell.empty {
