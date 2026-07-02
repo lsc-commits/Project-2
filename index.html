@@ -41,8 +41,13 @@
     <div id="dateActionPanel" class="date-action-panel" hidden>
       <div class="date-action-header">
         <span id="selectedDateLabel"></span>
-        <button id="closeDateAction" class="icon-btn-small" aria-label="닫기">×</button>
+        <div class="date-action-header-icons">
+          <button id="toggleDateInfo" class="icon-btn-small" aria-label="펼치기/접기">⌃</button>
+          <button id="closeDateAction" class="icon-btn-small" aria-label="닫기">×</button>
+        </div>
       </div>
+
+      <div id="dateInfoSection" class="date-info-section"></div>
 
       <div id="actionButtons" class="date-action-buttons">
         <button id="btnSingleMemo" class="action-btn">일정 메모 (당일)</button>

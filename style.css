@@ -150,14 +150,22 @@ body {
 }
 
 .calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.calendar-week {
+  position: relative;
+  display: flex;
   gap: 4px;
 }
 
 .day-cell {
   position: relative;
-  aspect-ratio: 1 / 1;
+  flex: 1 1 0;
+  min-width: 0;
+  aspect-ratio: 4 / 5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,6 +176,31 @@ body {
   background: transparent;
   color: var(--text-primary);
   transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.week-bars {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 13px;
+  pointer-events: none;
+}
+
+.event-bar {
+  position: absolute;
+  height: 5px;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.event-bar.round-left {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+
+.event-bar.round-right {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
 }
 
 .day-cell.empty {
@@ -268,6 +301,12 @@ body {
   letter-spacing: -0.01em;
 }
 
+.date-action-header-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .icon-btn-small {
   border: none;
   background: var(--bg);
@@ -277,12 +316,64 @@ body {
   border-radius: 50%;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .icon-btn-small:hover {
   background: var(--accent-weak);
   color: var(--accent);
+}
+
+#toggleDateInfo.collapsed {
+  transform: rotate(180deg);
+}
+
+.date-info-section {
+  margin-bottom: 14px;
+}
+
+.date-info-block-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.date-info-block-title:not(:first-child) {
+  margin-top: 12px;
+}
+
+.date-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--bg);
+  border-left: 3px solid var(--dot-color, var(--accent));
+  margin-bottom: 6px;
+}
+
+.date-info-item-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.date-info-memo {
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: var(--memo-weak);
+  border-radius: 10px;
+  padding: 10px 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.date-info-empty {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 10px 0;
 }
 
 .date-action-buttons {

@@ -225,6 +225,7 @@ loadMemoState();
 let activeTabIndex = 0;
 let targetTabIndex = 0;
 let trashTrayOpen = false;
+let dateInfoExpanded = true;
 
 const monthLabel = document.getElementById("monthLabel");
 const calendarGrid = document.getElementById("calendarGrid");
@@ -246,6 +247,8 @@ let dragDeltaX = 0;
 const dateActionPanel = document.getElementById("dateActionPanel");
 const selectedDateLabel = document.getElementById("selectedDateLabel");
 const closeDateActionBtn = document.getElementById("closeDateAction");
+const toggleDateInfoBtn = document.getElementById("toggleDateInfo");
+const dateInfoSection = document.getElementById("dateInfoSection");
 const actionButtons = document.getElementById("actionButtons");
 const btnSingleMemo = document.getElementById("btnSingleMemo");
 const btnRangeMemo = document.getElementById("btnRangeMemo");
@@ -282,6 +285,10 @@ swipeViewport.addEventListener("touchend", endDrag);
 closeDateActionBtn.addEventListener("click", () => {
   resetSelection();
   render();
+});
+toggleDateInfoBtn.addEventListener("click", () => {
+  dateInfoExpanded = !dateInfoExpanded;
+  renderDateActionPanel();
 });
 btnSingleMemo.addEventListener("click", () => {
   targetTabIndex = activeTabIndex;
@@ -559,56 +566,143 @@ function render() {
   renderPlatformList();
 }
 
+const MAX_EVENT_LANES = 2;
+
+function getMultiDayBarSegments(monthIndex) {
+  const { start: monthStart, end: monthEnd } = getMonthRange(monthIndex);
+  const prefix = monthStart.slice(0, 7);
+  const firstWeekday = new Date(YEAR, monthIndex, 1).getDay();
+  const daysInMonth = new Date(YEAR, monthIndex + 1, 0).getDate();
+
+  const multiDayEvents = EVENTS.filter((e) => e.endDate && e.endDate !== e.date && e.date <= monthEnd && e.endDate >= monthStart).sort((a, b) => a.date.localeCompare(b.date));
+
+  const laneEndDates = [];
+  const segments = [];
+
+  multiDayEvents.forEach((event) => {
+    let lane = 0;
+    while (laneEndDates[lane] !== undefined && laneEndDates[lane] >= event.date) lane++;
+    laneEndDates[lane] = event.endDate;
+    if (lane >= MAX_EVENT_LANES) return;
+
+    const trueStart = event.date.startsWith(prefix);
+    const trueEnd = event.endDate.startsWith(prefix);
+    const startDay = trueStart ? Number(event.date.slice(-2)) : 1;
+    const endDay = trueEnd ? Number(event.endDate.slice(-2)) : daysInMonth;
+
+    let day = startDay;
+    let isFirstSeg = true;
+    while (day <= endDay) {
+      const cellIndex = firstWeekday + day - 1;
+      const rowIndex = Math.floor(cellIndex / 7);
+      const colIndex = cellIndex % 7;
+      const rowLastDay = Math.min(endDay, day + (6 - colIndex));
+      const rowLastCellIndex = firstWeekday + rowLastDay - 1;
+      const rowEndCol = rowLastCellIndex % 7;
+      const isLastSeg = rowLastDay === endDay;
+
+      segments.push({
+        rowIndex,
+        startCol: colIndex,
+        endCol: rowEndCol,
+        lane,
+        category: event.category,
+        title: event.title,
+        roundLeft: isFirstSeg && trueStart,
+        roundRight: isLastSeg && trueEnd,
+      });
+
+      isFirstSeg = false;
+      day = rowLastDay + 1;
+    }
+  });
+
+  return segments;
+}
+
 function renderCalendar() {
   calendarGrid.innerHTML = "";
 
   const firstWeekday = new Date(YEAR, currentMonth, 1).getDay();
   const daysInMonth = new Date(YEAR, currentMonth + 1, 0).getDate();
+  const totalRows = Math.ceil((firstWeekday + daysInMonth) / 7);
+  const barSegments = getMultiDayBarSegments(currentMonth);
 
-  for (let i = 0; i < firstWeekday; i++) {
-    const empty = document.createElement("div");
-    empty.className = "day-cell empty";
-    calendarGrid.appendChild(empty);
-  }
+  for (let row = 0; row < totalRows; row++) {
+    const weekEl = document.createElement("div");
+    weekEl.className = "calendar-week";
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateKey = formatDateKey(YEAR, currentMonth, day);
-    const dayEvents = EVENTS.filter((e) => eventCoversDate(e, dateKey));
-    const weekday = (firstWeekday + day - 1) % 7;
+    for (let col = 0; col < 7; col++) {
+      const day = row * 7 + col - firstWeekday + 1;
 
-    const cell = document.createElement("div");
-    cell.className = "day-cell";
-    if (weekday === 0) cell.classList.add("sunday");
-    if (weekday === 6) cell.classList.add("saturday");
-    if (memoTabs[activeTabIndex].single[dateKey]) cell.classList.add("has-memo");
-    if (isInSavedRange(dateKey) || isInDraftRange(dateKey)) cell.classList.add("in-range");
-    if (dateKey === todayKey) cell.classList.add("today");
-    if ((mode === "selected" || mode === "single-edit") && dateKey === selectedDateKey) cell.classList.add("selected");
-    if (mode === "range-picking" && dateKey === rangeStart) cell.classList.add("selected");
-    if (mode === "range-edit" && (dateKey === rangeStart || dateKey === rangeEnd)) cell.classList.add("selected");
+      if (day < 1 || day > daysInMonth) {
+        const empty = document.createElement("div");
+        empty.className = "day-cell empty";
+        weekEl.appendChild(empty);
+        continue;
+      }
 
-    const dayNumber = document.createElement("span");
-    dayNumber.className = "day-number";
-    dayNumber.textContent = String(day);
-    cell.appendChild(dayNumber);
+      const dateKey = formatDateKey(YEAR, currentMonth, day);
+      const dayEvents = EVENTS.filter((e) => eventCoversDate(e, dateKey));
+      const singleDayEvents = dayEvents.filter((e) => !e.endDate || e.endDate === e.date);
 
-    if (dayEvents.length > 0) {
-      cell.classList.add("has-event");
-      const dotsWrap = document.createElement("div");
-      dotsWrap.className = "event-dots";
-      const categories = [...new Set(dayEvents.map((e) => e.category))].slice(0, 3);
-      categories.forEach((cat) => {
-        const dot = document.createElement("span");
-        dot.className = "event-dot";
-        dot.style.background = CATEGORY_COLORS[cat] || "#3182F6";
-        dotsWrap.appendChild(dot);
-      });
-      cell.appendChild(dotsWrap);
+      const cell = document.createElement("div");
+      cell.className = "day-cell";
+      if (col === 0) cell.classList.add("sunday");
+      if (col === 6) cell.classList.add("saturday");
+      if (memoTabs[activeTabIndex].single[dateKey]) cell.classList.add("has-memo");
+      if (isInSavedRange(dateKey) || isInDraftRange(dateKey)) cell.classList.add("in-range");
+      if (dateKey === todayKey) cell.classList.add("today");
+      if ((mode === "selected" || mode === "single-edit") && dateKey === selectedDateKey) cell.classList.add("selected");
+      if (mode === "range-picking" && dateKey === rangeStart) cell.classList.add("selected");
+      if (mode === "range-edit" && (dateKey === rangeStart || dateKey === rangeEnd)) cell.classList.add("selected");
+
+      const dayNumber = document.createElement("span");
+      dayNumber.className = "day-number";
+      dayNumber.textContent = String(day);
+      cell.appendChild(dayNumber);
+
+      if (singleDayEvents.length > 0) {
+        cell.classList.add("has-event");
+        const dotsWrap = document.createElement("div");
+        dotsWrap.className = "event-dots";
+        const categories = [...new Set(singleDayEvents.map((e) => e.category))].slice(0, 3);
+        categories.forEach((cat) => {
+          const dot = document.createElement("span");
+          dot.className = "event-dot";
+          dot.style.background = CATEGORY_COLORS[cat] || "#3182F6";
+          dotsWrap.appendChild(dot);
+        });
+        cell.appendChild(dotsWrap);
+      }
+
+      cell.addEventListener("click", () => handleDayClick(dateKey));
+
+      weekEl.appendChild(cell);
     }
 
-    cell.addEventListener("click", () => handleDayClick(dateKey));
+    const rowSegments = barSegments.filter((seg) => seg.rowIndex === row);
+    if (rowSegments.length > 0) {
+      const barsWrap = document.createElement("div");
+      barsWrap.className = "week-bars";
+      rowSegments.forEach((seg) => {
+        const bar = document.createElement("div");
+        bar.className = "event-bar";
+        if (seg.roundLeft) bar.classList.add("round-left");
+        if (seg.roundRight) bar.classList.add("round-right");
+        const leftPct = (seg.startCol / 7) * 100;
+        const widthPct = ((seg.endCol - seg.startCol + 1) / 7) * 100;
+        bar.style.left = `calc(${leftPct}% + 2px)`;
+        bar.style.width = `calc(${widthPct}% - 4px)`;
+        bar.style.bottom = `${seg.lane * 9}px`;
+        bar.style.background = CATEGORY_COLORS[seg.category] || "#3182F6";
+        bar.title = seg.title;
+        barsWrap.appendChild(bar);
+      });
+      weekEl.appendChild(barsWrap);
+    }
 
-    calendarGrid.appendChild(cell);
+    calendarGrid.appendChild(weekEl);
   }
 }
 
@@ -632,6 +726,54 @@ function renderDateActionPanel() {
   rangeHint.hidden = mode !== "range-picking";
   memoForm.hidden = mode !== "single-edit" && mode !== "range-edit";
   if (!memoForm.hidden) renderMemoTabPicker();
+
+  const showDateInfo = mode === "selected" || mode === "single-edit";
+  toggleDateInfoBtn.hidden = !showDateInfo;
+  toggleDateInfoBtn.classList.toggle("collapsed", !dateInfoExpanded);
+  dateInfoSection.hidden = !showDateInfo || !dateInfoExpanded;
+  if (showDateInfo && dateInfoExpanded) renderDateInfo();
+}
+
+function renderDateInfo() {
+  const dayEvents = EVENTS.filter((e) => eventCoversDate(e, selectedDateKey));
+  const memoText = memoTabs[activeTabIndex].single[selectedDateKey];
+
+  dateInfoSection.innerHTML = "";
+
+  if (dayEvents.length === 0 && !memoText) {
+    dateInfoSection.innerHTML = `<div class="date-info-empty">이 날짜에 등록된 이벤트나 메모가 없습니다.</div>`;
+    return;
+  }
+
+  if (dayEvents.length > 0) {
+    const title = document.createElement("div");
+    title.className = "date-info-block-title";
+    title.textContent = `이 날의 이벤트 (${dayEvents.length}건)`;
+    dateInfoSection.appendChild(title);
+
+    dayEvents.forEach((event) => {
+      const item = document.createElement("div");
+      item.className = "date-info-item";
+      item.style.setProperty("--dot-color", CATEGORY_COLORS[event.category] || "#3182F6");
+      item.innerHTML = `
+        <span class="event-tag">${event.category}</span>
+        <span class="date-info-item-title">${event.title}</span>
+      `;
+      dateInfoSection.appendChild(item);
+    });
+  }
+
+  if (memoText) {
+    const title = document.createElement("div");
+    title.className = "date-info-block-title";
+    title.textContent = "내 메모";
+    dateInfoSection.appendChild(title);
+
+    const memoBox = document.createElement("div");
+    memoBox.className = "date-info-memo";
+    memoBox.textContent = memoText;
+    dateInfoSection.appendChild(memoBox);
+  }
 }
 
 function renderMemoTabBar() {
