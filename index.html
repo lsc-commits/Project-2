@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2026 마케팅 이벤트 캘린더</title>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <span class="eyebrow">MARKETING CALENDAR</span>
+      <h1>2026 올해의 마케팅 이벤트</h1>
+      <p class="subtitle">월별로 넘겨보며 이벤트 일정을 확인하세요</p>
+    </header>
+
+    <div class="calendar-card">
+      <div class="month-nav">
+        <button id="prevMonth" aria-label="이전 달">‹</button>
+        <h2 id="monthLabel">2026년 1월</h2>
+        <button id="nextMonth" aria-label="다음 달">›</button>
+      </div>
+
+      <div class="weekdays">
+        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+      </div>
+
+      <div id="calendarGrid" class="calendar-grid"></div>
+
+      <div id="categoryLegend" class="legend"></div>
+    </div>
+
+    <div id="dateActionPanel" class="date-action-panel" hidden>
+      <div class="date-action-header">
+        <span id="selectedDateLabel"></span>
+        <button id="closeDateAction" class="icon-btn-small" aria-label="닫기">×</button>
+      </div>
+
+      <div id="actionButtons" class="date-action-buttons">
+        <button id="btnSingleMemo" class="action-btn">일정 메모 (당일)</button>
+        <button id="btnRangeMemo" class="action-btn">기간 메모</button>
+      </div>
+
+      <div id="rangeHint" class="range-hint" hidden>종료 날짜를 캘린더에서 선택해주세요</div>
+
+      <div id="memoForm" class="memo-form" hidden>
+        <textarea id="memoInput" placeholder="메모를 입력하세요" rows="3"></textarea>
+        <div class="memo-form-actions">
+          <button id="memoCancel" class="btn-ghost">취소</button>
+          <button id="memoSave" class="btn-primary">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="event-panel">
+      <div class="event-panel-header">
+        <h3 id="myMemoTitle">내 메모</h3>
+      </div>
+      <ul id="myMemoList" class="event-list"></ul>
+    </div>
+
+    <div class="event-panel swipe-panel">
+      <div class="swipe-viewport" id="swipeViewport">
+        <div class="swipe-track" id="swipeTrack">
+          <div class="swipe-page">
+            <div class="event-panel-header">
+              <h3 id="eventPanelTitle">이벤트</h3>
+            </div>
+            <ul id="eventList" class="event-list"></ul>
+          </div>
+          <div class="swipe-page">
+            <div class="event-panel-header">
+              <h3 id="platformPanelTitle">플랫폼 이슈</h3>
+            </div>
+            <ul id="platformList" class="event-list"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="swipe-dots">
+        <button class="swipe-dot active" data-page="0" aria-label="당월 이벤트 보기"></button>
+        <button class="swipe-dot" data-page="1" aria-label="플랫폼 이슈 보기"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
