@@ -1,5 +1,6 @@
 const YEAR = 2026;
-const STORAGE_KEY = "marketingCalendarMemos_2026";
+const LEGACY_STORAGE_KEY = "marketingCalendarMemos_2026";
+const MEMO_TABS_STORAGE_KEY = "marketingCalendarMemoTabs_2026";
 
 const CATEGORY_COLORS = {
   공휴일: "#F04452",
@@ -218,7 +219,9 @@ let selectedDateKey = null;
 let rangeStart = null;
 let rangeEnd = null;
 
-const memos = loadMemos();
+let memoTabs = loadMemoTabs();
+let activeTabIndex = 0;
+let targetTabIndex = 0;
 
 const monthLabel = document.getElementById("monthLabel");
 const calendarGrid = document.getElementById("calendarGrid");
@@ -250,6 +253,8 @@ const memoCancelBtn = document.getElementById("memoCancel");
 const memoSaveBtn = document.getElementById("memoSave");
 const myMemoTitle = document.getElementById("myMemoTitle");
 const myMemoList = document.getElementById("myMemoList");
+const memoTabBar = document.getElementById("memoTabBar");
+const memoTabPicker = document.getElementById("memoTabPicker");
 
 prevBtn.addEventListener("click", () => changeMonth(-1));
 nextBtn.addEventListener("click", () => changeMonth(1));
@@ -276,12 +281,14 @@ closeDateActionBtn.addEventListener("click", () => {
   render();
 });
 btnSingleMemo.addEventListener("click", () => {
+  targetTabIndex = activeTabIndex;
   mode = "single-edit";
-  memoInput.value = memos.single[selectedDateKey] || "";
+  memoInput.value = memoTabs[activeTabIndex].single[selectedDateKey] || "";
   render();
   memoInput.focus();
 });
 btnRangeMemo.addEventListener("click", () => {
+  targetTabIndex = activeTabIndex;
   mode = "range-picking";
   rangeStart = selectedDateKey;
   render();
@@ -296,29 +303,74 @@ memoCancelBtn.addEventListener("click", () => {
 });
 memoSaveBtn.addEventListener("click", () => {
   const text = memoInput.value.trim();
+  const tab = memoTabs[targetTabIndex];
   if (mode === "single-edit") {
-    if (text) memos.single[selectedDateKey] = text;
-    else delete memos.single[selectedDateKey];
+    if (text) tab.single[selectedDateKey] = text;
+    else delete tab.single[selectedDateKey];
   } else if (mode === "range-edit" && text) {
-    memos.ranges.push({ id: String(Date.now()), start: rangeStart, end: rangeEnd, text });
+    tab.ranges.push({ id: String(Date.now()), start: rangeStart, end: rangeEnd, text });
   }
-  saveMemos();
+  saveMemoTabs();
   resetSelection();
   render();
 });
 
-function loadMemos() {
+function loadMemoTabs() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    return { single: parsed.single || {}, ranges: parsed.ranges || [] };
+    const raw = localStorage.getItem(MEMO_TABS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.tabs) && parsed.tabs.length > 0) return parsed.tabs;
+    }
+    const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacyRaw) {
+      const legacy = JSON.parse(legacyRaw);
+      return [{ id: "tab-1", name: "내 메모", single: legacy.single || {}, ranges: legacy.ranges || [] }];
+    }
   } catch {
-    return { single: {}, ranges: [] };
+    // ignore parse errors, fall through to default
   }
+  return [{ id: "tab-1", name: "내 메모", single: {}, ranges: [] }];
 }
 
-function saveMemos() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(memos));
+function saveMemoTabs() {
+  localStorage.setItem(MEMO_TABS_STORAGE_KEY, JSON.stringify({ tabs: memoTabs }));
+}
+
+function addMemoTab() {
+  memoTabs.push({ id: "tab-" + Date.now(), name: `새 메모 ${memoTabs.length + 1}`, single: {}, ranges: [] });
+  activeTabIndex = memoTabs.length - 1;
+  saveMemoTabs();
+  render();
+}
+
+function deleteMemoTab(index) {
+  if (memoTabs.length <= 1) return;
+  memoTabs.splice(index, 1);
+  if (activeTabIndex > index) activeTabIndex -= 1;
+  else if (activeTabIndex >= memoTabs.length) activeTabIndex = memoTabs.length - 1;
+  saveMemoTabs();
+  render();
+}
+
+function startRenameTab(index, chip, nameSpan) {
+  const input = document.createElement("input");
+  input.className = "memo-tab-name-input";
+  input.value = memoTabs[index].name;
+  chip.replaceChild(input, nameSpan);
+  input.focus();
+  input.select();
+
+  const commit = () => {
+    const newName = input.value.trim();
+    if (newName) memoTabs[index].name = newName;
+    saveMemoTabs();
+    render();
+  };
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") input.blur();
+  });
+  input.addEventListener("blur", commit);
 }
 
 function escapeHtml(str) {
@@ -407,7 +459,7 @@ function getEventsForMonth(monthIndex) {
 }
 
 function isInSavedRange(dateKey) {
-  return memos.ranges.some((r) => dateKey >= r.start && dateKey <= r.end);
+  return memoTabs[activeTabIndex].ranges.some((r) => dateKey >= r.start && dateKey <= r.end);
 }
 
 function isInDraftRange(dateKey) {
@@ -448,6 +500,7 @@ function render() {
   nextBtn.disabled = currentMonth === 11;
 
   renderCalendar();
+  renderMemoTabBar();
   renderDateActionPanel();
   renderMyMemos();
   renderEventList();
@@ -475,7 +528,7 @@ function renderCalendar() {
     cell.className = "day-cell";
     if (weekday === 0) cell.classList.add("sunday");
     if (weekday === 6) cell.classList.add("saturday");
-    if (memos.single[dateKey]) cell.classList.add("has-memo");
+    if (memoTabs[activeTabIndex].single[dateKey]) cell.classList.add("has-memo");
     if (isInSavedRange(dateKey) || isInDraftRange(dateKey)) cell.classList.add("in-range");
     if (dateKey === todayKey) cell.classList.add("today");
     if ((mode === "selected" || mode === "single-edit") && dateKey === selectedDateKey) cell.classList.add("selected");
@@ -526,25 +579,104 @@ function renderDateActionPanel() {
   actionButtons.hidden = mode !== "selected";
   rangeHint.hidden = mode !== "range-picking";
   memoForm.hidden = mode !== "single-edit" && mode !== "range-edit";
+  if (!memoForm.hidden) renderMemoTabPicker();
+}
+
+function renderMemoTabBar() {
+  memoTabBar.innerHTML = "";
+
+  memoTabs.forEach((tab, index) => {
+    const chip = document.createElement("div");
+    chip.className = "memo-tab" + (index === activeTabIndex ? " active" : "");
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "memo-tab-name";
+    nameSpan.textContent = tab.name;
+    nameSpan.title = tab.name;
+    nameSpan.addEventListener("click", () => {
+      activeTabIndex = index;
+      render();
+    });
+    chip.appendChild(nameSpan);
+
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "memo-tab-icon-btn";
+    editBtn.textContent = "✎";
+    editBtn.setAttribute("aria-label", "탭 이름 변경");
+    editBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      startRenameTab(index, chip, nameSpan);
+    });
+    chip.appendChild(editBtn);
+
+    if (memoTabs.length > 1) {
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "memo-tab-icon-btn";
+      delBtn.textContent = "×";
+      delBtn.setAttribute("aria-label", "탭 삭제");
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (confirm(`"${tab.name}" 탭을 삭제할까요? 안에 있는 메모도 함께 삭제됩니다.`)) {
+          deleteMemoTab(index);
+        }
+      });
+      chip.appendChild(delBtn);
+    }
+
+    memoTabBar.appendChild(chip);
+  });
+
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "memo-tab-add";
+  addBtn.textContent = "+";
+  addBtn.setAttribute("aria-label", "탭 추가");
+  addBtn.addEventListener("click", addMemoTab);
+  memoTabBar.appendChild(addBtn);
+}
+
+function renderMemoTabPicker() {
+  memoTabPicker.innerHTML = "";
+
+  const label = document.createElement("span");
+  label.className = "memo-tab-picker-label";
+  label.textContent = "저장할 탭";
+  memoTabPicker.appendChild(label);
+
+  memoTabs.forEach((tab, index) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "memo-tab-picker-btn" + (index === targetTabIndex ? " active" : "");
+    btn.textContent = String(index + 1);
+    btn.title = tab.name;
+    btn.addEventListener("click", () => {
+      targetTabIndex = index;
+      renderMemoTabPicker();
+    });
+    memoTabPicker.appendChild(btn);
+  });
 }
 
 function renderMyMemos() {
+  const tab = memoTabs[activeTabIndex];
   const { start: monthStart, end: monthEnd } = getMonthRange(currentMonth);
 
   const items = [];
-  Object.keys(memos.single).forEach((dateKey) => {
+  Object.keys(tab.single).forEach((dateKey) => {
     if (dateKey >= monthStart && dateKey <= monthEnd) {
-      items.push({ type: "single", date: dateKey, text: memos.single[dateKey] });
+      items.push({ type: "single", date: dateKey, text: tab.single[dateKey] });
     }
   });
-  memos.ranges.forEach((r) => {
+  tab.ranges.forEach((r) => {
     if (r.start <= monthEnd && r.end >= monthStart) {
       items.push({ type: "range", ...r });
     }
   });
   items.sort((a, b) => (a.date || a.start).localeCompare(b.date || b.start));
 
-  myMemoTitle.textContent = `내 메모 (${items.length}건)`;
+  myMemoTitle.textContent = `${tab.name} (${items.length}건)`;
   myMemoList.innerHTML = "";
 
   if (items.length === 0) {
@@ -574,9 +706,9 @@ function renderMyMemos() {
     `;
 
     li.querySelector(".memo-delete").addEventListener("click", () => {
-      if (item.type === "single") delete memos.single[item.date];
-      else memos.ranges = memos.ranges.filter((r) => r.id !== item.id);
-      saveMemos();
+      if (item.type === "single") delete tab.single[item.date];
+      else tab.ranges = tab.ranges.filter((r) => r.id !== item.id);
+      saveMemoTabs();
       render();
     });
 

@@ -392,6 +392,125 @@ body {
   margin-bottom: 16px;
 }
 
+.memo-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #eef0f3;
+  scrollbar-width: none;
+}
+
+.memo-tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.memo-tab {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  padding: 6px 8px 6px 12px;
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.memo-tab.active {
+  background: var(--memo-color);
+  color: white;
+}
+
+.memo-tab-name {
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memo-tab-name-input {
+  width: 72px;
+  border: none;
+  border-radius: 6px;
+  padding: 2px 5px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.memo-tab-icon-btn {
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.75;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px;
+  line-height: 1;
+}
+
+.memo-tab-icon-btn:hover {
+  opacity: 1;
+}
+
+.memo-tab-add {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.memo-tab-add:hover {
+  background: var(--memo-weak);
+  color: var(--memo-color);
+}
+
+.memo-tab-picker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.memo-tab-picker-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-right: 2px;
+}
+
+.memo-tab-picker-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.memo-tab-picker-btn.active {
+  background: var(--memo-color);
+  color: white;
+}
+
 .event-panel-header {
   margin-bottom: 14px;
 }
